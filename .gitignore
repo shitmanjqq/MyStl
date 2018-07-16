@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+temp/*
+
+utility/*.out
+utility/*.o

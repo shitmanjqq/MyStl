@@ -6,6 +6,12 @@
 
 namespace MyStl {
 
+  template <typename>
+  struct tell_type;
+
+  template <std::size_t>
+  struct tell_compile_const;
+
   template <typename T, T N>
   struct type_constant {
     constexpr static const T value = N;
@@ -131,6 +137,18 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
   template <typename T, std::size_t N>
   struct is_array<T [N]> : true_type {};
 
+  template <typename T>
+  struct is_array_and_known_bound : false_type {};
+
+  template <typename T, std::size_t N>
+  struct is_array_and_known_bound<T[N]> : true_type {};
+
+  template <typename T>
+  struct is_array_and_unknown_bound : false_type {};
+
+  template <typename T>
+  struct is_array_and_unknown_bound<T[]> : true_type {};
+
   template <typename From, typename To,
             bool = OR<is_void<To>, is_function<To>, is_array<To>>::value>
   struct is_convertible_helper {
@@ -160,6 +178,83 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
 
   template <typename T>
   struct is_final : bool_constant<__is_final(T)> {};
+
+  // template 
+  template <typename T>
+  struct remove_extent {
+    using type = T;
+  };
+
+  template <typename T>
+  struct remove_extent<T[]> {
+    using type = T;
+  };
+
+  template <typename T, std::size_t N>
+  struct remove_extent<T[N]> {
+    using type = T;
+  };
+
+  template <typename T>
+  struct remove_all_extents {
+    using type = T;
+  };
+
+  template <typename T>
+  struct remove_all_extents<T[]> : remove_all_extents<T> {};
+
+  template <typename T, std::size_t N>
+  struct remove_all_extents<T[N]> : remove_all_extents<T> {};
+
+  struct is_default_constructible_helper {
+    template <typename T, typename = decltype(T{})>
+    static true_type test(int);
+
+    template <typename>
+    static false_type test(...);
+  };
+
+  template <typename T, bool = is_array_and_unknown_bound<T>::value>
+  struct is_default_constructible_array : is_default_constructible_helper {
+    using type = decltype(test<typename remove_all_extents<T>::type>(0));
+  };
+
+  template <typename T>
+  struct is_default_constructible_array<T, true> {
+    using type = false_type;
+  };
+
+  template <typename T, bool = is_void<T>::value>
+  struct is_default_constructible_imple {
+    using type = typename is_default_constructible_array<T>::type;
+  };
+
+  template <typename T>
+  struct is_default_constructible_imple<T, true> {
+    using type = false_type;
+  };
+
+  template <typename T>
+  struct is_default_constructible : is_default_constructible_imple<T>::type {};
+
+  struct is_implicitly_default_constructible_helper {
+    template <typename T>
+    static void helper(const T &);
+
+    template <typename T, typename = decltype(helper<T>({}))>
+    static true_type test(int);
+
+    template <typename>
+    static false_type test(...);
+  };
+
+  template <typename T>
+  struct is_implicitly_default_constructible_impl : is_implicitly_default_constructible_helper {
+    using type = decltype(test<T>(0));
+  };
+
+  template <typename T>
+  struct is_implicitly_default_constructible : AND<is_default_constructible<T>, typename is_implicitly_default_constructible_impl<T>::type> {};
 
 }
 

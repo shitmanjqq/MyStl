@@ -1,13 +1,13 @@
-#ifndef PAIR_H_
-#define PAIR_H_
+#ifndef UTILITY_PAIR_H_
+#define UTILITY_PAIR_H_
 
-#include <type_traits>
+#include "type_traits.h"
 
 namespace MyStl {
 
   struct piecewise_construct_t {};
 
-  constexpr const piecewise_construct_t piecewise_construct = piecewise_construct_t{};
+  constexpr piecewise_construct_t piecewise_construct;
 
   template <typename ... TS>
   struct tuple;
@@ -85,6 +85,13 @@ namespace MyStl {
     constexpr pair(tuple<Args1 ...> &, tuple<Args2 ...> &,
                    index_tuple<Idx1 ...>, index_tuple<Idx2 ...>);
   };
+
+  template <typename T1, typename T2>
+  pair<typename std::decay<T1>::type, typename std::decay<T2>::type>
+  make_pair(T1 &&t1, T2 &&t2) {
+    using pair_type = pair<typename std::decay<T1>::type, typename std::decay<T2>::type>;
+    return pair_type{std::forward<T1>(t1), std::forward<T2>(t2)};
+  }
 
 }
 

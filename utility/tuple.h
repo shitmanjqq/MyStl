@@ -1,7 +1,9 @@
 #ifndef UTILITY_TUPLE_H_
 #define UTILITY_TUPLE_H_
 
+
 #include "type_traits.h"
+#include "pair.h"
 
 namespace MyStl {
 
@@ -114,6 +116,34 @@ namespace MyStl {
       : Inherited{std::move(tuple_impl<Idx, MHead, MTails ...>::get_tails(t))}
       , Base{std::forward<MHead>(tuple_impl<Idx, MHead, MTails ...>::get_head(t))} {}
 
+    tuple_impl &operator=(const tuple_impl &t) {
+      get_head(*this) = get_head(t);
+      get_tails(*this) = get_tails(t);
+      return *this;
+    }
+
+    tuple_impl &operator=(tuple_impl &&t) {
+      get_head(*this) = std::forward<Head>(get_head(t));
+      get_tails(*this) = std::move(get_tails(t));
+      return *this;
+    }
+
+    template <typename MHead, typename ... MTails>
+    typename enable_if<sizeof...(MTails) == sizeof...(Tails), tuple_impl &>::type
+    operator=(const tuple_impl<Idx, MHead, MTails ...> &t) {
+      get_head(*this) = tuple_impl<Idx, MHead, MTails ...>::get_head(t);
+      get_tails(*this) = tuple_impl<Idx, MHead, MTails ...>::get_tails(t);
+      return *this;
+    }
+
+    template <typename MHead, typename ... MTails>
+    typename enable_if<sizeof...(MTails) == sizeof...(Tails), tuple_impl &>::type
+    operator=(tuple_impl<Idx, MHead, MTails ...> &&t) {
+      get_head(*this) = std::forward<Head>(tuple_impl<Idx, MHead, MTails ...>::get_head(t));
+      get_tails(*this) = std::move(tuple_impl<Idx, MHead, MTails ...>::get_tails(t));
+      return *this;
+    }
+
   };
 
   template <std::size_t Idx, typename Head>
@@ -137,9 +167,6 @@ namespace MyStl {
     constexpr tuple_impl(const Head &head)
       : Base{head} {}
 
-    constexpr tuple_impl(Head &&head)
-      : Base{std::move(head)} {}
-
     template <typename MHead>
     constexpr tuple_impl(MHead &&head)
       : Base{std::forward<MHead>(head)} {}
@@ -151,6 +178,28 @@ namespace MyStl {
     template <typename MHead>
     constexpr tuple_impl(tuple_impl<Idx, MHead> &&t)
       : Base{std::forward<MHead>(tuple_impl<Idx, MHead>::get_head(t))} {}
+
+    tuple_impl &operator=(const tuple_impl &t) {
+      get_head(*this) = get_head(t);
+      return *this;
+    }
+
+    tuple_impl &operator=(tuple_impl &&t) {
+      get_head(*this) = std::forward<Head>(get_head(t));
+      return *this;
+    }
+
+    template <typename MHead>
+    tuple_impl &operator=(const tuple_impl<Idx, MHead> &t) {
+      get_head(*this) = tuple_impl<Idx, MHead>::get_head(t);
+      return *this;
+    }
+
+    template <typename MHead>
+    tuple_impl &operator=(tuple_impl<Idx, MHead> &&t) {
+      get_head(*this) = std::forward<MHead>(tuple_impl<Idx, MHead>::get_head(t));
+      return *this;
+    }
   };
 
   template <typename ... TS>
@@ -172,6 +221,29 @@ namespace MyStl {
     template <typename ... Elems, typename = typename enable_if<sizeof...(TS) == sizeof...(Elems)>::type>
     constexpr tuple(tuple<Elems ...> &&t)
       : Inherited{static_cast<tuple_impl<0, Elems ...> &&>(t)} {}
+
+    tuple &operator=(const tuple &t) {
+      static_cast<Inherited &>(*this) = t;
+      return *this;
+    }
+
+    tuple &operator=(tuple &&t) {
+      static_cast<Inherited &>(*this) = std::move(t);
+      return *this;
+    }
+
+    template <typename ... Elems, typename = typename enable_if<sizeof...(TS) == sizeof...(Elems)>::type>
+    tuple &operator=(const tuple<Elems ...> &t) {
+      static_cast<Inherited &>(*this) = t;
+      return *this;
+    }
+
+    template <typename ... Elems>
+    typename enable_if<sizeof...(TS) == sizeof...(Elems), tuple &>::type
+    operator=(tuple<Elems ...> &&t) {
+      static_cast<Inherited &>(*this) = std::move(t);
+      return *this;
+    }
   };
 
   template <typename T>
@@ -291,6 +363,54 @@ namespace MyStl {
   constexpr tuple<typename std::decay<TS>::type ...> make_tuple(TS &&... elems) {
     return tuple<typename std::decay<TS>::type ...>{std::forward<TS>(elems) ...};
   }
+
+  template <typename ... TS>
+  tuple<TS &...> tie(TS &... args) {
+    return tuple<TS &...>{args ...};
+  }
+
+  struct ignore_t {
+    template <typename T>
+    const ignore_t &operator=(const T &) const {
+      return *this;
+    }
+  };
+
+  constexpr ignore_t ignore;
+
+  template <typename T1, typename T2>
+  template <typename ... Args1, typename ... Args2>
+  inline constexpr pair<T1, T2>::pair(piecewise_construct_t, tuple<Args1 ...> t1, tuple<Args2 ...> t2) 
+    : pair{t1, t2,
+           typename build_index_tuple_v2<sizeof...(Args1)>::type{},
+           typename build_index_tuple_v2<sizeof...(Args2)>::type{}} {}
+
+  template <typename T1, typename T2>
+  template <typename ... Args1, std::size_t ... Idx1,
+            typename ... Args2, std::size_t ... Idx2>
+  inline constexpr pair<T1, T2>::pair(tuple<Args1 ...> &t1, tuple<Args2 ...> &t2,
+                                      index_tuple<Idx1 ...>, index_tuple<Idx2 ...>)
+    : first{std::forward<Args1>(get<Idx1>(t1)) ...}
+    , second{std::forward<Args2>(get<Idx2>(t2)) ...} {}
+}
+
+// support for structured binding
+namespace std {
+
+  template <typename>
+  struct tuple_size;
+
+  template <typename ... TS>
+  struct tuple_size<MyStl::tuple<TS ...>> : integral_constant<size_t, sizeof...(TS)> {};
+
+  template <size_t, typename>
+  struct tuple_element;
+
+  template <size_t Idx, typename ... TS>
+  struct tuple_element<Idx, MyStl::tuple<TS ...>> {
+    using type = typename MyStl::tuple_elem<Idx, MyStl::tuple<TS ...>>::type;
+  };
+
 }
 
 #endif

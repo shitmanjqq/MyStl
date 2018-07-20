@@ -33,5 +33,6 @@
 
 temp/*
 
-utility/*.out
-utility/*.o
+*.vscode*
+*workspace*
+

@@ -1,7 +1,6 @@
 #ifndef UTILITY_TYPE_TRAITS_H_
 #define UTILITY_TYPE_TRAITS_H_
 
-#include <cstddef>
 #include <type_traits>
 
 namespace MyStl {
@@ -95,6 +94,38 @@ namespace MyStl {
   struct remove_cv {
     using type = typename remove_const<typename remove_volatile<T>::type>::type;
   };
+
+
+  template <typename T>
+  struct remove_reference {
+    using type = T;
+  };
+
+  template <typename T>
+  struct remove_reference<T &> {
+    using type = T;
+  };
+
+  template <typename T>
+  struct remove_reference<T &&> {
+    using type = T;
+  };
+
+  template <typename T>
+  struct is_lvalue_reference : false_type {};
+
+  template <typename T>
+  struct is_lvalue_reference<T &> : true_type {};
+
+  template <typename T>
+  struct is_rvalue_reference : false_type {};
+
+  template <typename T>
+  struct is_rvalue_reference<T &&> : true_type {};
+
+  template <typename T>
+  struct is_reference : OR<is_lvalue_reference<T>,
+                           is_rvalue_reference<T>>::type {};
 
   template <typename T>
   struct is_void_helper : false_type {};
@@ -255,6 +286,27 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
 
   template <typename T>
   struct is_implicitly_default_constructible : AND<is_default_constructible<T>, typename is_implicitly_default_constructible_impl<T>::type> {};
+
+  template <typename T>
+  constexpr typename remove_reference<T>::type &&
+  move(T &&t) {
+    return static_cast<typename remove_reference<T>::type &&>(t);
+  }
+
+  template <typename T>
+  constexpr T &&
+  forward(typename remove_reference<T>::type &t) {
+    return static_cast<T &&>(t);
+  }
+
+  template <typename T>
+  constexpr T &&
+  forward(typename remove_reference<T>::type &&t) {
+    static_assert(!is_lvalue_reference<T>::value, "trans rvalue to lvalue");
+    return static_cast<T &&>(t);
+  }
+
+  
 
 }
 

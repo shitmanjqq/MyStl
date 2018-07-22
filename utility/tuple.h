@@ -1,7 +1,6 @@
 #ifndef UTILITY_TUPLE_H_
 #define UTILITY_TUPLE_H_
 
-
 #include "type_traits.h"
 #include "pair.h"
 
@@ -360,8 +359,27 @@ namespace MyStl {
   }
 
   template <typename ... TS>
-  constexpr tuple<typename std::decay<TS>::type ...> make_tuple(TS &&... elems) {
+  constexpr tuple<typename std::decay<TS>::type ...>
+  make_tuple(TS &&... elems) {
     return tuple<typename std::decay<TS>::type ...>{std::forward<TS>(elems) ...};
+  }
+
+  template <typename ... TS>
+  constexpr tuple<TS &...>
+  make_forward_tuple_same_cv(tuple<TS ...> &t) {
+    return tuple<TS &...>(t);
+  }
+
+  template <typename ... TS>
+  constexpr tuple<const TS &...>
+  make_forward_tuple_same_cv(const tuple<TS ...> &t) {
+    return tuple<const TS &...>(t);
+  }
+
+  template <typename ... TS>
+  constexpr tuple<const TS &...>
+  make_forward_tuple_const(const tuple<TS ...> &t) {
+    return tuple<const TS &...>(t);
   }
 
   template <typename ... TS>

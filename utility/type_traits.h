@@ -11,6 +11,27 @@ namespace MyStl {
   template <std::size_t>
   struct tell_compile_const;
 
+#if __GNUC__ < 7
+  template <typename T>
+  T *address_of(T &t) noexcept {
+    return reinterpret_cast<T *>(
+      &(const_cast<char &>(reinterpret_cast<const volatile char &>(t))));
+  }
+#else
+  template <typename T>
+  constexpr T *address_of(T &t) noexcept {
+    return __builtin_addressof(t);
+  }
+#endif
+
+  template <typename T>
+  inline T *addressof(T &t) noexcept {
+    return address_of(t);
+  }
+
+  template <typename T>
+  inline T *addressof(const T &&t) = delete;
+
   template <typename T, T N>
   struct type_constant {
     constexpr static const T value = N;
@@ -306,7 +327,90 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
     return static_cast<T &&>(t);
   }
 
-  
+  template <typename T>
+  struct is_mem_obj_pointer_impl : false_type {};
+
+  template <typename T, typename Class>
+  struct is_mem_obj_pointer_impl<T Class::*>
+    : bool_constant<!is_function<T>::value> {};
+
+  template <typename T>
+  struct is_mem_obj_pointer
+    : is_mem_obj_pointer_impl<typename remove_cv<T>::type> {};
+
+  template <typename T>
+  struct is_mem_func_pointer_impl : false_type {};
+
+  template <typename T, typename Class>
+  struct is_mem_func_pointer_impl<T Class::*>
+    : bool_constant<is_function<T>::value> {};
+
+  template <typename T>
+  struct is_mem_func_pointer
+    : is_mem_func_pointer_impl<typename remove_cv<T>::type> {};
+
+  template <typename PMObj, typename Obj, typename ... Args>
+  struct result_of_mem_obj {
+    using result_type = decltype((std::declval<Obj>().*(std::declval<PMObj>()))(std::declval<Args>() ...));
+  };
+
+  template <bool IsMemFn, bool IsMemObj, typename CallObj, typename ... Args>
+  struct result_of_impl;
+
+  template <typename CallObj, typename ... Args>
+  struct result_of_impl<true, false, CallObj, Args ...> {
+    // using result_type = typename result_of_mem_obj<CallObj, Args ...>::result_type;
+  };
+
+  template <typename CallObj, typename ... Args>
+  struct result_of_impl<false, true, CallObj, Args ...> {
+    using result_type = typename result_of_mem_obj<CallObj, Args ...>::result_type;
+  };
+
+  template <typename CallObj, typename ... Args>
+  struct result_of_impl<false, false, CallObj, Args ...> {
+    // no need to dereference any possible reference_wrapper arguments,
+    // because they can be implicitly converted to the underly type
+    using result_type = decltype(std::declval<CallObj>()(std::declval<Args>() ...));
+  };
+
+  template <typename T>
+  struct result_of;
+
+  template <typename Func, typename ... Args>
+  struct result_of<Func(Args ...)>
+    : result_of_impl<is_mem_func_pointer<typename remove_cv<Func>::type>::value,
+                     is_mem_obj_pointer<typename remove_cv<Func>::type>::value,
+                     Func, Args ...>
+  {};
+
+  template <typename T>
+  class reference_wrapper {
+    T *pt_;
+
+   public:
+    reference_wrapper(T &t)
+      : pt_{address_of(t)} {}
+
+    reference_wrapper(T &&) = delete;
+    reference_wrapper(const reference_wrapper &) = default;
+
+    reference_wrapper &operator=(const reference_wrapper &r) = default;
+
+    T &get() const noexcept {
+      return *pt_;
+    }
+
+    operator T&() const noexcept {
+      return this->get();
+    }
+
+    template <typename ... Args>
+    typename result_of<T &(Args ...)>::type
+    operator()(Args &&... args) const {
+      return invoke(get(), std::forward<Args>(args) ...);
+    }
+  };
 
 }
 

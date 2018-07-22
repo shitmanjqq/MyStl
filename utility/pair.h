@@ -212,12 +212,15 @@ namespace MyStl {
     return static_cast<typename tuple_elem<Idx, pair<T1, T2>>::type &&>(pair_get<Idx>::get(p));
   }
 
-  // template <typename T1, typename T2, typename T3, typename T4>
-  // bool operator==(const pair<T1, T2> &p1, const pair<T3, T4> &p2) {
-  //   return p1.first == p2.first && p1.second == p2.second;
-  // }
+  template <typename T1, typename T2, typename T3, typename T4>
+  void swap(pair<T1, T2> &p1, pair<T3, T4> &p2) {
+    p1.swap(p2);
+  }
 
-
+  template <typename T1, typename T2>
+  std::ostream &operator<<(std::ostream &os, const pair<T1, T2> &p) {
+    return os << p.first << ", " << p.second;
+  }
 
 }
 

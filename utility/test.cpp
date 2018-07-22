@@ -9,60 +9,90 @@
  * warranty, and with no claim as to its suitability for any purpose.
  */
 #include <iostream>
+#include <algorithm>
 #include <utility>
 #include <tuple>
+#include <functional>
 // using namespace std;
 #include "pair.h"
 #include "tuple.h"
 
-class Foo {
+int gi = 3;
+
+class Foo
+{
   public:
-    Foo (MyStl::tuple<int, float>) {
-        std::cout << "Foo::Foo(tuple)" << std::endl;
+    Foo(int i = 23) : i_{i} {
+        std::cout << "default" << std::endl;
     }
-    template <typename... Args>
-    Foo (Args... args) {
-        std::cout << "Foo::Foo(args...)" << std::endl;
+
+    Foo(const Foo &f) : i_{f.i_} {
+        std::cout << "copy" << std::endl;
     }
+
+    Foo(Foo &&f) {
+        MyStl::swap(i_, f.i_);
+        std::cout << "move" << std::endl;
+    }
+
+    Foo &operator=(Foo &&f) {
+        MyStl::swap(i_, f.i_);
+        std::cout << "move =" << std::endl;
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, const Foo &f) {
+        return os << f.i_;
+    }
+
+    ~Foo() {
+        std::cout << "~Foo" << std::endl;
+    }
+
+  private:
+    int i_;
 };
 
-// template <int, typename T>
-// void func(T);
+struct A {
+    int i;
+};
 
-// template <typename T>
-// void func<0, T>(T);
+struct B {
+    int j;
+};
+
+struct C : A, B {
+    int k;
+};
+
+struct Test {
+    int i;
+    void *func(int, double, A, B) const {}
+};
+
+// Test func(int, double, A, B);
+
+// void gunc(B);
 
 int main()
 {
-    // create tuple t:
-    MyStl::tuple<int,float> t(1,2.22f);
-
-    // pass the tuple as a whole to the constructor of Foo:
-    MyStl::pair<int,int> p1 (42, 23);
-
-    // pass the elements of the tuple to the constructor of Foo:
-    MyStl::pair<int,Foo> p2 (MyStl::piecewise_construct, MyStl::make_tuple(42), t);
-
-    // std::cout << (MyStl::get<1>(std::move(t)) = 3) << std::endl;
-
-    std::cout << (p1 == p1) << std::endl;
-    
-    // int i = 0;
-    // MyStl::pair<int, int &> p{23, i};
-    // MyStl::get<0>(p) = 3;
-    // MyStl::get<1>(p) = 13;
-    // std::cout << i << std::endl;
-    // constexpr MyStl::pair<int, int> cp{12, 3};
-
-    // MyStl::tell_compile_const<MyStl::get<0>(cp)> a;
-
-    // MyStl::get<0>(std::move(p)) = 3;
-    // MyStl::get<1>(static_cast<decltype(p) const &&>(p)) = 23;
-    // std::cout << i << std::endl;
-    // int i;
-    // std::pair<void(), int> p;
-    // std::forward<int &>(std::move(i));
-    // std::pair<int, int &> sp{23, i};
-    // std::get<1>(static_cast<decltype(sp) const &&>(sp)) = 23;
+    // const int i = 3;
+    // std::reference_wrapper<int > rr;
+    // C c;
+    // std::reference_wrapper<B> rr{c};
+    // std::cout << &c << std::endl;
+    // B &rb = c;
+    // std::cout << &rb << std::endl;
+    // std::cout << &(rr.get()) << std::endl;
+    std::cout << std::boolalpha;
+    MyStl::tell_type<typename MyStl::result_of<decltype(&Test::func)(const Test, const int, std::reference_wrapper<double>, volatile A, const B &)>::result_type> a;
+    // MyStl::tell_type<decltype(std::declval<decltype(gunc)>()(std::declval<const volatile B&>()))> b;
+    // MyStl::tell_type<decltype(std::declval<const volatile B&>())> c;
+    MyStl::tell_type<typename std::result_of<decltype(&Test::func)(const Test, const int, std::reference_wrapper<double>, volatile A, const B &)>::type> b;
+    // MyStl::tell_type<typename std::__result_of_impl<false, false, decltype(func), int, double, A, B>::type> b;
+    // std::cout << MyStl::is_mem_func_pointer<decltype(&Test::func) *>::value << std::endl;
+    // std::cout << MyStl::is_mem_func_pointer<decltype(&Test::i)>::value << std::endl;
+    // std::cout << MyStl::is_mem_obj_pointer<decltype(&Test::func)>::value << std::endl;
+    // std::cout << MyStl::is_mem_obj_pointer<decltype(&Test::i)>::value << std::endl;
 }
+
 

@@ -1,59 +1,29 @@
-#include <tuple>
 #include <iostream>
-#include <string>
-#include <stdexcept>
-#include "tuple.h"
-
-MyStl::tuple<double, char, std::string> get_student(int id)
+#include <functional>
+#include "type_traits.h"
+ 
+void f1()
 {
-    if (id == 0)
-        return MyStl::make_tuple(3.8, 'A', "Lisa Simpson");
-    if (id == 1)
-        return MyStl::make_tuple(2.9, 'C', "Milhouse Van Houten");
-    if (id == 2)
-        return MyStl::make_tuple(1.7, 'D', "Ralph Wiggum");
-    throw std::invalid_argument("id");
+    std::cout << "reference to function called\n";
 }
-
-std::tuple<double, char, std::string> get_std_student(int id)
+void f2(int n)
 {
-    if (id == 0)
-        return std::make_tuple(3.8, 'A', "Lisa Simpson");
-    if (id == 1)
-        return std::make_tuple(2.9, 'C', "Milhouse Van Houten");
-    if (id == 2)
-        return std::make_tuple(1.7, 'D', "Ralph Wiggum");
-    throw std::invalid_argument("id");
+    std::cout << "bind expression called with " << n << " as the argument\n";
 }
-
+ 
 int main()
 {
-    auto student0 = get_student(0);
-    std::cout << "ID: 0, "
-              << "GPA: " << MyStl::get<0>(student0) << ", "
-              << "grade: " << MyStl::get<1>(student0) << ", "
-              << "name: " << MyStl::get<2>(student0) << '\n';
+    MyStl::reference_wrapper<void()> ref1 = MyStl::ref(f1);
+    ref1();
 
-    double gpa1;
-    char grade1;
-    std::string name1;
-    MyStl::tie(gpa1, grade1, MyStl::ignore) = get_student(1);
-
-    // MyStl::tuple<double &, char &, std::string &> rt{gpa1, grade1, name1};
-    // auto rr = get_student(1);
-    // rt = rr;
-
-    std::cout << "ID: 1, "
-              << "GPA: " << gpa1 << ", "
-              << "grade: " << grade1 << ", "
-              << "name: " << name1 << '\n';
-
-    // C++17 structured binding:
-    // auto [ agpa2, agrade2, aname2 ] = get_student(2);
-    auto [gpa2, grade2, name2] = get_student(2);
-    // MyStl::tell_type<decltype(name2)> t;
-    std::cout << "ID: 2, "
-              << "GPA: " << gpa2 << ", "
-              << "grade: " << grade2 << ", "
-              << "name: " << name2 << '\n';
+    MyStl::reference_wrapper<void(int)> ref2 = MyStl::ref(f2);
+ 
+    auto b = std::bind(ref2, std::placeholders::_1);
+    b(3);
+    auto ref = MyStl::ref(b);
+    ref(7);
+ 
+    auto c = []{std::cout << "lambda function called\n"; };
+    auto ref3 = MyStl::ref(c);
+    ref3();
 }

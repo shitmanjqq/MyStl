@@ -64,8 +64,13 @@ struct C : A, B {
     int k;
 };
 
+struct D {
+    void operator()(int) {}
+    void func() & {}
+};
+
 struct Test {
-    int i;
+    D i;
     void *func(int, double, A, B) const {}
 };
 
@@ -73,8 +78,47 @@ struct Test {
 
 // void gunc(B);
 
+// template <typename T>
+// using void_t = void;
+
+
+// template <typename T>
+// struct F;
+
+// template <typename T, typename = F<T &>>
+// struct Mem;
+
+// template <typename T, typename U>
+// struct Mem<T, F<U>> {
+//     U u;
+// };
+
+// template <typename T>
+// struct Mem<T, void> {};
+
+// struct F {
+//     explicit F(int i) : i{i} {}
+
+//     template <typename T>
+//     F(T &&i) : i{i} {}
+
+//     int i;
+// };
+
+int add(int a, int b) {
+    return a + b;
+}
+
 int main()
 {
+    // auto pmf = &Test::func;
+    // MyStl::reference_wrapper<decltype(&Test::func)> f{pmf};
+    // Test t;
+    // f(Test{}, 2, 2.3, A{}, B{});
+
+    // std::reference_wrapper<decltype(&Test::func)> sf{pmf};
+    // sf(Test{}, 2, 2.3, A{}, B{});
+    // std::cout << f(2, 3) << std::endl;
     // const int i = 3;
     // std::reference_wrapper<int > rr;
     // C c;
@@ -83,16 +127,33 @@ int main()
     // B &rb = c;
     // std::cout << &rb << std::endl;
     // std::cout << &(rr.get()) << std::endl;
-    std::cout << std::boolalpha;
-    MyStl::tell_type<typename MyStl::result_of<decltype(&Test::func)(const Test, const int, std::reference_wrapper<double>, volatile A, const B &)>::result_type> a;
-    // MyStl::tell_type<decltype(std::declval<decltype(gunc)>()(std::declval<const volatile B&>()))> b;
-    // MyStl::tell_type<decltype(std::declval<const volatile B&>())> c;
-    MyStl::tell_type<typename std::result_of<decltype(&Test::func)(const Test, const int, std::reference_wrapper<double>, volatile A, const B &)>::type> b;
-    // MyStl::tell_type<typename std::__result_of_impl<false, false, decltype(func), int, double, A, B>::type> b;
-    // std::cout << MyStl::is_mem_func_pointer<decltype(&Test::func) *>::value << std::endl;
-    // std::cout << MyStl::is_mem_func_pointer<decltype(&Test::i)>::value << std::endl;
-    // std::cout << MyStl::is_mem_obj_pointer<decltype(&Test::func)>::value << std::endl;
-    // std::cout << MyStl::is_mem_obj_pointer<decltype(&Test::i)>::value << std::endl;
+    // std::cout << std::boolalpha;
+    // MyStl::tell_type<typename MyStl::result_of<decltype(&Test::func) &(const MyStl::reference_wrapper<Test>, const int, std::reference_wrapper<double>, volatile A, const B &)>::type> a;
+    // MyStl::tell_type<typename std::result_of<decltype(&Test::func) &(std::reference_wrapper<Test>, const int, std::reference_wrapper<double>, volatile A, const B &)>::type> b;
+
+    // MyStl::tell_type<std::result_of<decltype(&Test::i)(const std::reference_wrapper<Test>)>::type> a;
+    // MyStl::tell_type<typename MyStl::result_of<decltype(&Test::i)(const MyStl::reference_wrapper<Test>)>::result_type> b;
+
+    // MyStl::tell_type<std::__inv_unwrap<const std::reference_wrapper<Test>>::type> i;
+
+    // auto pmf = &Test::i;
+    // auto f = std::ref(pmf);
+    // Test t;
+    // f(t).func();
+    // Mem<int> m;
+    // int i;
+    // F f(i);
+    // F cf{f};
+    int i = 3;
+    int *pi = &i;
+    auto f = MyStl::ref(pi);
+    auto cf = MyStl::cref(f);
+
+    // auto sf = std::ref(pi);
+    // auto csf = std::cref(sf);
+    // *(f.get()) = 23;
+    // MyStl::tell_type<decltype(f)> a;
+    // MyStl::cref(i);
 }
 
 

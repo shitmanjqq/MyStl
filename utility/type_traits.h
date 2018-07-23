@@ -46,6 +46,9 @@ namespace MyStl {
   using true_type = bool_constant<true>;
   using false_type = bool_constant<false>;
 
+  template <typename T>
+  using false_assert = false_type;
+
   template <bool V, typename TrueType, typename FalseType>
   struct conditional {
     using type = TrueType;
@@ -90,6 +93,15 @@ namespace MyStl {
 
   template <typename ... Conds>
   using Require = typename enable_if<AND<Conds ...>::value>::type;
+
+  template <typename T1, typename T2>
+  struct is_same : false_type {};
+
+  template <typename T>
+  struct is_same<T, T> : true_type {};
+
+  template <typename Base, typename Derived>
+  struct is_base_of : bool_constant<__is_base_of(Base, Derived)> {};
 
   template <typename T>
   struct remove_const {
@@ -348,30 +360,101 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
   template <typename T>
   struct is_mem_func_pointer
     : is_mem_func_pointer_impl<typename remove_cv<T>::type> {};
+  
+  struct __result_of_type_mem_func_ref {};
+  struct __result_of_type_mem_func_deref {};
+  struct __result_of_type_mem_obj_ref {};
+  struct __result_of_type_mem_obj_deref {};
+  struct __result_of_type_other {};
 
-  template <typename PMObj, typename Obj, typename ... Args>
-  struct result_of_mem_obj {
-    using result_type = decltype((std::declval<Obj>().*(std::declval<PMObj>()))(std::declval<Args>() ...));
+  template <typename PMFunc, typename Obj, typename ... Args>
+  struct result_of_mem_func_ref {
+    using type = decltype((std::declval<Obj>().*std::declval<PMFunc>())(std::declval<Args>() ...));
+    using tag = __result_of_type_mem_func_ref;
+  };
+
+  template <typename PMFunc, typename Obj, typename ... Args>
+  struct result_of_mem_func_deref {
+    using type = decltype(((*std::declval<Obj>()).*std::declval<PMFunc>())(std::declval<Args>() ...));
+    using tag = __result_of_type_mem_func_deref;
+  };
+
+  template <typename PMFunc, typename ... Args>
+  struct result_of_mem_func;
+
+  template <typename Func, typename Class, typename Obj, typename ... Args>
+  struct result_of_mem_func<Func Class::*, Obj, Args ...> {
+    using ObjType = typename remove_cv<typename remove_reference<Obj>::type>::type;
+    using PMFuncPtr = Func Class::*;
+    using result_type = typename conditional<OR<is_same<Class, ObjType>,
+                                                is_base_of<Class, ObjType>>::value,
+                                             result_of_mem_func_ref<PMFuncPtr, Obj, Args ...>,
+                                             result_of_mem_func_deref<PMFuncPtr, Obj, Args ...>>::type;
+    using type = typename result_type::type;
+    using tag = typename result_type::tag;
+  };
+
+  template <typename PMObj, typename Obj>
+  struct result_of_mem_obj_deref {
+    using type = decltype(((*std::declval<Obj>()).*(std::declval<PMObj>())));
+    using tag = __result_of_type_mem_obj_deref;
+  };
+
+  template <typename PMObj, typename Obj>
+  struct result_of_mem_obj_ref {
+    using type = decltype((std::declval<Obj>().*(std::declval<PMObj>())));
+    using tag = __result_of_type_mem_obj_ref;
+  };
+
+  template <typename PMObj, typename Obj>
+  struct result_of_mem_obj;
+
+  template <typename TP, typename Class, typename Obj>
+  struct result_of_mem_obj<TP Class::*, Obj> {
+    using ObjType = typename remove_cv<typename remove_reference<Obj>::type>::type;
+    using PMObjPtr = TP Class::*;
+    using result_type = typename conditional<OR<is_same<Class, ObjType>,
+                                                is_base_of<Class, ObjType>>::value,
+                                             result_of_mem_obj_ref<PMObjPtr, Obj>,
+                                             result_of_mem_obj_deref<PMObjPtr, Obj>>::type;
+    using type = typename result_type::type;
+    using tag = typename result_type::tag;
+  };
+
+  template <typename T>
+  struct reference_wrapper;
+
+  template <typename T, typename U = typename std::decay<T>::type>
+  struct unwrapper_ref {
+    using type = T;
+  };
+
+  template <typename T, typename U>
+  struct unwrapper_ref<T, reference_wrapper<U>> {
+    using type = U &;
   };
 
   template <bool IsMemFn, bool IsMemObj, typename CallObj, typename ... Args>
   struct result_of_impl;
 
-  template <typename CallObj, typename ... Args>
-  struct result_of_impl<true, false, CallObj, Args ...> {
-    // using result_type = typename result_of_mem_obj<CallObj, Args ...>::result_type;
-  };
+  template <typename CallObj, typename Obj, typename ... Args>
+  struct result_of_impl<true, false, CallObj, Obj, Args ...>
+    : result_of_mem_func<typename std::decay<CallObj>::type,
+                         typename unwrapper_ref<Obj>::type, Args ...>
+  {};
 
-  template <typename CallObj, typename ... Args>
-  struct result_of_impl<false, true, CallObj, Args ...> {
-    using result_type = typename result_of_mem_obj<CallObj, Args ...>::result_type;
-  };
+  template <typename CallObj, typename Args>
+  struct result_of_impl<false, true, CallObj, Args>
+    : result_of_mem_obj<typename std::decay<CallObj>::type,
+                        typename unwrapper_ref<Args>::type>
+  {};
 
   template <typename CallObj, typename ... Args>
   struct result_of_impl<false, false, CallObj, Args ...> {
     // no need to dereference any possible reference_wrapper arguments,
     // because they can be implicitly converted to the underly type
-    using result_type = decltype(std::declval<CallObj>()(std::declval<Args>() ...));
+    using type = decltype(std::declval<CallObj>()(std::declval<Args>() ...));
+    using tag = __result_of_type_other;
   };
 
   template <typename T>
@@ -379,10 +462,55 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
 
   template <typename Func, typename ... Args>
   struct result_of<Func(Args ...)>
-    : result_of_impl<is_mem_func_pointer<typename remove_cv<Func>::type>::value,
-                     is_mem_obj_pointer<typename remove_cv<Func>::type>::value,
+    : result_of_impl<is_mem_func_pointer<typename remove_reference<Func>::type>::value,
+                     is_mem_obj_pointer<typename remove_reference<Func>::type>::value,
                      Func, Args ...>
   {};
+
+  template <typename T, typename U = typename unwrapper_ref<T>::type>
+  constexpr U &&
+  unwrap_forward(typename remove_reference<T>::type &t) {
+    return static_cast<U &&>(t);
+  }
+
+  template <typename Res, typename Func, typename ... Args>
+   Res
+  invoke_impl(__result_of_type_other, Func &&func, Args &&... args) {
+    return std::forward<Func>(func)(std::forward<Args>(args) ...);
+  }
+
+  template <typename Res, typename PMFunc, typename Obj, typename ... Args>
+   Res
+  invoke_impl(__result_of_type_mem_func_ref, PMFunc &&pmf, Obj &&obj, Args &&... args) {
+    return (unwrap_forward<Obj>(obj).*pmf)(std::forward<Args>(args) ...);
+  }
+
+  template <typename Res, typename PMFunc, typename Obj, typename ... Args>
+   Res
+  invoke_impl(__result_of_type_mem_func_deref, PMFunc &&pmf, Obj &&obj, Args &&... args) {
+    return ((*std::forward<Obj>(obj)).*pmf)(std::forward<Args>(args) ...);
+  }
+
+  template <typename Res, typename PMObj, typename Obj>
+   Res
+  invoke_impl(__result_of_type_mem_obj_ref, PMObj &&pmobj, Obj &&obj) {
+    return unwrap_forward<Obj>(obj).*pmobj;
+  }
+
+  template <typename Res, typename PMObj, typename Obj>
+   Res
+  invoke_impl(__result_of_type_mem_obj_deref, PMObj &&pmobj, Obj &&obj) {
+    return (*std::forward<Obj>(obj)).*pmobj;
+  }
+
+  template <typename Func, typename ... Args>
+   typename result_of<Func &(Args ...)>::type
+  invoke(Func &&func, Args &&... args) {
+    using result_type = result_of<Func &(Args ...)>;
+    using tag = typename result_type::tag;
+    using type = typename result_type::type;
+    return invoke_impl<type>(tag{}, std::forward<Func>(func), std::forward<Args>(args) ...);
+  }
 
   template <typename T>
   class reference_wrapper {
@@ -411,6 +539,44 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
       return invoke(get(), std::forward<Args>(args) ...);
     }
   };
+
+  template <typename T>
+  inline reference_wrapper<T>
+  ref(T &obj) {
+    return reference_wrapper<T>(obj);
+  }
+
+  template <typename T>
+  inline reference_wrapper<const T>
+  cref(const T &obj) {
+    return reference_wrapper<const T>(obj);
+  }
+
+  template <typename T>
+  inline reference_wrapper<T>
+  ref(const T &&obj) {
+    static_assert(false_assert<T>::value, "reference_wrapper cann't bind to rvalue.");
+    return reference_wrapper<T>(const_cast<T &>(obj));
+  }
+
+  template <typename T>
+  inline reference_wrapper<T>
+  cref(const T &&obj) {
+    static_assert(false_assert<T>::value, "reference_wrapper cann't bind to rvalue.");
+    return reference_wrapper<T>(const_cast<T &>(obj));
+  }
+
+  template <typename T>
+  inline reference_wrapper<T>
+  ref(reference_wrapper<T> r) {
+    return reference_wrapper<T>{r.get()};
+  }
+
+  template <typename T>
+  inline reference_wrapper<const T>
+  cref(reference_wrapper<T> r) {
+    return reference_wrapper<const T>{r.get()};
+  }
 
 }
 

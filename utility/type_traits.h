@@ -582,6 +582,16 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
     return reference_wrapper<const T>{r.get()};
   }
 
+  template <typename T, typename U = typename std::decay<T>::type>
+  struct decay_and_unwrap_ref {
+    using type = U;
+  };
+
+  template <typename T, typename U>
+  struct decay_and_unwrap_ref<T, reference_wrapper<U>> {
+    using type = U &;
+  };
+
 }
 
 #endif

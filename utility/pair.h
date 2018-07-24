@@ -139,16 +139,6 @@ namespace MyStl {
   //   return pair_type{std::forward<T1>(t1), std::forward<T2>(t2)};
   // }
 
-  template <typename T, typename U = typename std::decay<T>::type>
-  struct decay_and_unwrap_ref {
-    using type = U;
-  };
-
-  template <typename T, typename U>
-  struct decay_and_unwrap_ref<T, reference_wrapper<U>> {
-    using type = U &;
-  };
-
   template <typename T1, typename T2>
   pair<typename decay_and_unwrap_ref<T1>::type, typename decay_and_unwrap_ref<T2>::type>
   make_pair(T1 &&t1, T2 &&t2) {

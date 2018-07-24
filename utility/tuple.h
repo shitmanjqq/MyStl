@@ -38,6 +38,8 @@ namespace MyStl {
     template <typename MHead>
     constexpr Head_base(MHead &&head)
       : Head{std::forward<MHead>(head)} {}
+    
+    void swap(Head_base &) {}
   };
 
   template <std::size_t Idx, typename Head>
@@ -62,6 +64,10 @@ namespace MyStl {
     template <typename MHead>
     constexpr Head_base(MHead &&head)
       : head_{std::forward<MHead>(head)} {}
+
+    void swap(Head_base &h) {
+      MyStl::swap(h.head_, head_);
+    }
   
    private:
     Head head_;
@@ -143,6 +149,10 @@ namespace MyStl {
       return *this;
     }
 
+    void swap(tuple_impl &t) {
+      Base::swap(t);
+      Inherited::swap(t);
+    }
   };
 
   template <std::size_t Idx, typename Head>
@@ -199,12 +209,16 @@ namespace MyStl {
       get_head(*this) = std::forward<MHead>(tuple_impl<Idx, MHead>::get_head(t));
       return *this;
     }
+
+    void swap(tuple_impl &t) {
+      Base::swap(t);
+    }
   };
 
   template <typename ... TS>
   struct tuple : tuple_impl<0, TS ...> {
     using Inherited = tuple_impl<0, TS ...>;
-  
+
     constexpr tuple() = default;
     constexpr tuple(const tuple &) = default;
     constexpr tuple(tuple &&) = default;
@@ -243,7 +257,94 @@ namespace MyStl {
       static_cast<Inherited &>(*this) = std::move(t);
       return *this;
     }
+
+    void swap(tuple &t) {
+      Inherited::swap(t);
+    }
   };
+
+  template <>
+  struct tuple<> {
+    constexpr tuple() = default;
+
+    void swap(tuple &) {}
+  };
+
+  template <typename T1, typename T2>
+  struct tuple<T1, T2>
+    : tuple_impl<0, T1, T2>
+  {
+    using Inherited = tuple_impl<0, T1, T2>;
+
+    constexpr tuple() = default;
+    constexpr tuple(const tuple &) = default;
+    constexpr tuple(tuple &&) = default;
+
+    template <typename MT1, typename MT2>
+    constexpr tuple(MT1 &&t1, MT2 &&t2)
+      : Inherited{std::forward<MT1>(t1), std::forward<MT2>(t2)} {}
+
+    template <typename MT1, typename MT2>
+    constexpr tuple(const tuple<MT1, MT2> &t)
+      : Inherited{static_cast<const tuple_impl<0, MT1, MT2> &>(t)} {}
+
+    template <typename MT1, typename MT2>
+    constexpr tuple(tuple<MT1, MT2> &&t)
+      : Inherited{static_cast<tuple_impl<0, MT1, MT2> &&>(t)} {}
+    
+    template <typename MT1, typename MT2>
+    constexpr tuple(const pair<MT1, MT2> &p)
+      : Inherited{p.first, p.second} {}
+    
+    template <typename MT1, typename MT2>
+    constexpr tuple(pair<MT1, MT2> &&p)
+      : Inherited{std::forward<MT1>(p.first), std::forward<MT2>(p.second)} {}
+
+    tuple &operator=(const tuple &t) {
+      static_cast<Inherited &>(*this) = t;
+      return *this;
+    }
+
+    tuple &operator=(tuple &&t) {
+      static_cast<Inherited &>(*this) = std::move(t);
+      return *this;
+    }
+
+    template <typename MT1, typename MT2>
+    tuple &operator=(const tuple<MT1, MT2> &t) {
+      static_cast<Inherited &>(*this) = static_cast<const tuple_impl<0, MT1, MT2> &>(t);
+      return *this;
+    }
+
+    template <typename MT1, typename MT2>
+    tuple &operator=(tuple<MT1, MT2> &&t) {
+      static_cast<Inherited &>(*this) = std::move(t);
+      return *this;
+    }
+
+    template <typename MT1, typename MT2>
+    tuple &operator=(const pair<MT1, MT2> &p) {
+      Inherited::get_head(*this) = p.first;
+      Inherited::get_tails(*this).get_head(*this) = p.second;
+      return *this;
+    }
+
+    template <typename MT1, typename MT2>
+    tuple &operator=(pair<MT1, MT2> &&p) {
+      Inherited::get_head(*this) = std::forward<MT1>(p.first);
+      Inherited::get_tails(*this).get_head(*this) = std::forward<MT2>(p.second);
+      return *this;
+    }
+
+    void swap(tuple &t) {
+      Inherited::swap(t);
+    }
+  };
+
+  template <typename ... TS>
+  void swap(tuple<TS ...> &t1, tuple<TS ...> &t2) {
+    t1.swap(t2);
+  }
 
   template <typename T>
   struct tuple_size;
@@ -361,10 +462,16 @@ namespace MyStl {
     return std::forward<elem_type>(get_helper<Idx>(t));
   }
 
+  // template <typename ... TS>
+  // constexpr tuple<typename std::decay<TS>::type ...>
+  // make_tuple(TS &&... elems) {
+  //   return tuple<typename std::decay<TS>::type ...>{std::forward<TS>(elems) ...};
+  // }
+
   template <typename ... TS>
-  constexpr tuple<typename std::decay<TS>::type ...>
+  constexpr tuple<typename decay_and_unwrap_ref<TS>::type ...>
   make_tuple(TS &&... elems) {
-    return tuple<typename std::decay<TS>::type ...>{std::forward<TS>(elems) ...};
+    return tuple<typename decay_and_unwrap_ref<TS>::type ...>{std::forward<TS>(elems) ...};
   }
 
   template <typename ... TS>

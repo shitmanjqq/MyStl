@@ -53,30 +53,41 @@ class Foo
     int i_;
 };
 
+int i;
+struct A {
+    operator int &() {
+        return i;
+    }
+};
+
 
 int main()
 {
     std::cout << std::boolalpha;
-    // int i = 1;
-    // auto pm = MyStl::make_pair(MyStl::ref(i), MyStl::ref(i));
-    // auto ps = std::make_pair(std::ref(i), std::ref(i));
-    // MyStl::tell_type<std::__decay_and_strip<const std::reference_wrapper<int const> *>::__type> m1;
+    
+    std::string s = "hello";
 
-    // MyStl::tell_type<MyStl::decay_and_unwrap_ref<const MyStl::reference_wrapper<int const> *>::type> m2;
+    auto t1 = MyStl::make_tuple(s);
+    MyStl::get<0>(t1) = "world";
+    std::cout << s << std::endl;
 
-    // MyStl::tell_type<decltype(pm)> m1;
-    // MyStl::tell_type<decltype(ps)> m2;
+    // auto t2 = MyStl::make_tuple(MyStl::ref(s));
 
-    // ++pm.first;
-    // ++pm.second;
-    // std::cout << i << std::endl;
+    // std::string &rs = MyStl::ref(s);
+    // MyStl::tell_type<decltype(MyStl::ref(s))> a;
 
-    auto t1 = MyStl::make_tuple(3, 2.3, 'c');
-    auto t2 = t1;
 
-    MyStl::get<0>(t2) = 23;
-    std::cout << (t1 != t2) << std::endl;
-    // MyStl::tell_type<decltype(t1)> a;
+    // MyStl::Head_base<0, std::string &> h{MyStl::ref(s)};
+    std::string &rs{std::forward<MyStl::reference_wrapper<std::string>>(MyStl::ref(s))};
+
+    MyStl::tell_type<decltype(std::forward<MyStl::reference_wrapper<std::string>>(MyStl::ref(s)).operator std::string &())> a;
+    // int i;
+    // A a;
+    // int &ri{std::forward<A>(a)};
+    // int &ri{std::forward<int>(i)};
+    // MyStl::tell_type<MyStl::decay_and_unwrap_ref<MyStl::
+    // MyStl::get<0>(t2) = "world";
+    // std::cout << s << std::endl;
 }
 
 

@@ -91,6 +91,9 @@ namespace MyStl {
     using type = T;
   };
 
+  template <bool V>
+  using enable_if_t = typename enable_if<V>::type;
+
   template <typename ... Conds>
   using Require = typename enable_if<AND<Conds ...>::value>::type;
 
@@ -474,37 +477,37 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
   }
 
   template <typename Res, typename Func, typename ... Args>
-   Res
+  constexpr Res
   invoke_impl(__result_of_type_other, Func &&func, Args &&... args) {
     return std::forward<Func>(func)(std::forward<Args>(args) ...);
   }
 
   template <typename Res, typename PMFunc, typename Obj, typename ... Args>
-   Res
+  constexpr Res
   invoke_impl(__result_of_type_mem_func_ref, PMFunc &&pmf, Obj &&obj, Args &&... args) {
     return (unwrap_forward<Obj>(obj).*pmf)(std::forward<Args>(args) ...);
   }
 
   template <typename Res, typename PMFunc, typename Obj, typename ... Args>
-   Res
+  constexpr Res
   invoke_impl(__result_of_type_mem_func_deref, PMFunc &&pmf, Obj &&obj, Args &&... args) {
     return ((*std::forward<Obj>(obj)).*pmf)(std::forward<Args>(args) ...);
   }
 
   template <typename Res, typename PMObj, typename Obj>
-   Res
+  constexpr Res
   invoke_impl(__result_of_type_mem_obj_ref, PMObj &&pmobj, Obj &&obj) {
     return unwrap_forward<Obj>(obj).*pmobj;
   }
 
   template <typename Res, typename PMObj, typename Obj>
-   Res
+  constexpr Res
   invoke_impl(__result_of_type_mem_obj_deref, PMObj &&pmobj, Obj &&obj) {
     return (*std::forward<Obj>(obj)).*pmobj;
   }
 
   template <typename Func, typename ... Args>
-   typename result_of<Func &(Args ...)>::type
+  constexpr typename result_of<Func &(Args ...)>::type
   invoke(Func &&func, Args &&... args) {
     using result_type = result_of<Func &(Args ...)>;
     using tag = typename result_type::tag;
@@ -526,6 +529,7 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
     reference_wrapper &operator=(const reference_wrapper &r) = default;
 
     T &get() const noexcept {
+      std::cout << "111111" << std::endl;
       return *pt_;
     }
 

@@ -262,9 +262,12 @@ namespace MyStl {
     using type = Head;
   };
 
+  template <std::size_t N>
+  using false_value = false_type;
+
   template <std::size_t Idx>
   struct tuple_elem<Idx, tuple<>> {
-    static_assert(Idx < 0, "tuple index is out of range");
+    static_assert(false_value<Idx>::value, "Index of empty tuple.");
   };
 
   template <std::size_t ... Idxs>
@@ -393,8 +396,63 @@ namespace MyStl {
       return *this;
     }
   };
-
   constexpr ignore_t ignore;
+
+  template <std::size_t Idx, std::size_t UpperBound>
+  struct tuple_compare {
+    template<typename T1, typename T2>
+    constexpr static bool eq(const T1 &t1, const T2 &t2) {
+      return get<Idx>(t1) == get<Idx>(t2) && tuple_compare<Idx + 1, UpperBound>::eq(t1, t2);
+    }
+
+    template <typename T1, typename T2>
+    constexpr static bool less(const T1 &t1, const T2 &t2) {
+      return get<Idx>(t1) < get<Idx>(t2) || (!(get<Idx>(t2) < get<Idx>(t1)) && tuple_compare<Idx + 1, UpperBound>::less(t1, t2));
+    }
+  };
+
+  template <std::size_t UpperBound>
+  struct tuple_compare<UpperBound, UpperBound> {
+    template<typename T1, typename T2>
+    constexpr static bool eq(const T1 &t1, const T2 &t2) {
+      return true;
+    }
+
+    template <typename T1, typename T2>
+    constexpr static bool less(const T1 &t1, const T2 &t2) {
+      return false;
+    }
+  };
+
+  template <typename ... TS1, typename ... TS2, typename = enable_if_t<(sizeof...(TS1) == sizeof...(TS2))>>
+  bool operator==(const tuple<TS1 ...> &t1, const tuple<TS2 ...> &t2) {
+    return tuple_compare<0, sizeof...(TS1)>::eq(t1, t2);
+  }
+
+  template <typename ... TS1, typename ... TS2, typename = enable_if_t<(sizeof...(TS1) == sizeof...(TS2))>>
+  bool operator!=(const tuple<TS1 ...> &t1, const tuple<TS2 ...> &t2) {
+    return !(t1 == t2);
+  }
+
+  template <typename ... TS1, typename ... TS2, typename = enable_if_t<(sizeof...(TS1) == sizeof...(TS2))>>
+  bool operator<(const tuple<TS1 ...> &t1, const tuple<TS2 ...> &t2) {
+    return tuple_compare<0, sizeof...(TS1)>::less(t1, t2);
+  }
+
+  template <typename ... TS1, typename ... TS2, typename = enable_if_t<(sizeof...(TS1) == sizeof...(TS2))>>
+  bool operator>(const tuple<TS1 ...> &t1, const tuple<TS2 ...> &t2) {
+    return t2 < t1;
+  }
+
+  template <typename ... TS1, typename ... TS2, typename = enable_if_t<(sizeof...(TS1) == sizeof...(TS2))>>
+  bool operator<=(const tuple<TS1 ...> &t1, const tuple<TS2 ...> &t2) {
+    return !(t1 > t2);
+  }
+
+  template <typename ... TS1, typename ... TS2, typename = enable_if_t<(sizeof...(TS1) == sizeof...(TS2))>>
+  bool operator>=(const tuple<TS1 ...> &t1, const tuple<TS2 ...> &t2) {
+    return !(t1 < t2);
+  }
 
   template <typename T1, typename T2>
   template <typename ... Args1, typename ... Args2>

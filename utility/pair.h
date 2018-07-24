@@ -132,10 +132,27 @@ namespace MyStl {
                    index_tuple<Idx1 ...>, index_tuple<Idx2 ...>);
   };
 
+  // template <typename T1, typename T2>
+  // pair<typename std::decay<T1>::type, typename std::decay<T2>::type>
+  // make_pair(T1 &&t1, T2 &&t2) {
+  //   using pair_type = pair<typename std::decay<T1>::type, typename std::decay<T2>::type>;
+  //   return pair_type{std::forward<T1>(t1), std::forward<T2>(t2)};
+  // }
+
+  template <typename T, typename U = typename std::decay<T>::type>
+  struct decay_and_unwrap_ref {
+    using type = U;
+  };
+
+  template <typename T, typename U>
+  struct decay_and_unwrap_ref<T, reference_wrapper<U>> {
+    using type = U &;
+  };
+
   template <typename T1, typename T2>
-  pair<typename std::decay<T1>::type, typename std::decay<T2>::type>
+  pair<typename decay_and_unwrap_ref<T1>::type, typename decay_and_unwrap_ref<T2>::type>
   make_pair(T1 &&t1, T2 &&t2) {
-    using pair_type = pair<typename std::decay<T1>::type, typename std::decay<T2>::type>;
+    using pair_type = pair<typename decay_and_unwrap_ref<T1>::type, typename decay_and_unwrap_ref<T2>::type>;
     return pair_type{std::forward<T1>(t1), std::forward<T2>(t2)};
   }
 

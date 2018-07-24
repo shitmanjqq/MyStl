@@ -53,11 +53,20 @@ class Foo
     int i_;
 };
 
-int i;
+std::string s;
 struct A {
-    operator int &() {
-        return i;
+    operator std::string &() {
+        return s;
     }
+    // operator int &() {
+    //     return i;
+    // }
+
+    // A() = default;
+    // template <typename T>
+    // A(std::initializer_list<T>) {
+    //     std::cout << "1111111111" << std::endl;
+    // }
 };
 
 
@@ -71,6 +80,14 @@ int main()
     MyStl::get<0>(t1) = "world";
     std::cout << s << std::endl;
 
+    auto t2 = MyStl::make_tuple(MyStl::ref(s));
+    MyStl::get<0>(t2) = "world";
+    std::cout << s << std::endl;
+
+    // std::string &rs1{A{}};
+    // std::string &rs2(A{});
+    // std::string &rs3 = A();
+
     // auto t2 = MyStl::make_tuple(MyStl::ref(s));
 
     // std::string &rs = MyStl::ref(s);
@@ -78,9 +95,19 @@ int main()
 
 
     // MyStl::Head_base<0, std::string &> h{MyStl::ref(s)};
-    std::string &rs{std::forward<MyStl::reference_wrapper<std::string>>(MyStl::ref(s))};
+    // std::string &&rs{std::forward<MyStl::reference_wrapper<std::string>>(MyStl::ref(s))};
+    // auto t2 = std::make_tuple(std::ref(s));
 
-    MyStl::tell_type<decltype(std::forward<MyStl::reference_wrapper<std::string>>(MyStl::ref(s)).operator std::string &())> a;
+    // MyStl::tell_type<decltype(std::forward<MyStl::reference_wrapper<std::string>>(MyStl::ref(s)))> a;
+    // decltype({std::forward<MyStl::reference_wrapper<std::string>>(MyStl::ref(s))})
+    // int i;
+    // int &ri{std::move(i)};
+    // A a;
+    // A &&ra{std::forward<MyStl::reference_wrapper<A>>(a)};
+
+    // A &ra1 = std::forward<MyStl::reference_wrapper<A>>(a);
+
+    // MyStl::tell_type<decltype(std::forward<MyStl::reference_wrapper<std::string>>(MyStl::ref(s)).operator std::string &())> a;
     // int i;
     // A a;
     // int &ri{std::forward<A>(a)};

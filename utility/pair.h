@@ -24,7 +24,7 @@ namespace MyStl {
     T2 second;
 
     constexpr pair()
-      : first{}, second{} {}
+      : first(), second() {}
 
     constexpr pair(const pair &) = default;
     constexpr pair(pair &&) = default;
@@ -33,19 +33,19 @@ namespace MyStl {
               typename = typename std::enable_if<std::__and_<std::is_convertible<MT1, T1>,
                                                              std::is_convertible<MT2, T2>>::value>::type>
     constexpr pair(MT1 &&t1, MT2 &&t2)
-      : first{std::forward<MT1>(t1)}, second{std::forward<MT2>(t2)} {}
+      : first(std::forward<MT1>(t1)), second(std::forward<MT2>(t2)) {}
 
     template <typename MT1, typename MT2,
               typename = typename std::enable_if<std::__and_<std::is_convertible<const MT1 &, T1>,
                                                              std::is_convertible<const MT2 &, T2>>::value>::type>
     constexpr pair(const pair<MT1, MT2> &p)
-      : first{p.first}, second{p.second} {}
+      : first(p.first), second(p.second) {}
 
     template <typename MT1, typename MT2,
               typename = typename std::enable_if<std::__and_<std::is_convertible<MT1 &&, T1>,
                                                              std::is_convertible<MT2 &&, T2>>::value>::type>
     constexpr pair(pair<MT1, MT2> &&p)
-      : first{std::move<MT1>(p.first)}, second{std::move<MT2>(p.second)} {}
+      : first(std::move<MT1>(p.first)), second(std::move<MT2>(p.second)) {}
 
     template <typename ... Args1, typename ... Args2>
     constexpr pair(piecewise_construct_t, tuple<Args1 ...>, tuple<Args2 ...>);
@@ -143,7 +143,7 @@ namespace MyStl {
   pair<typename decay_and_unwrap_ref<T1>::type, typename decay_and_unwrap_ref<T2>::type>
   make_pair(T1 &&t1, T2 &&t2) {
     using pair_type = pair<typename decay_and_unwrap_ref<T1>::type, typename decay_and_unwrap_ref<T2>::type>;
-    return pair_type{std::forward<T1>(t1), std::forward<T2>(t2)};
+    return pair_type(std::forward<T1>(t1), std::forward<T2>(t2));
   }
 
   template <typename T>

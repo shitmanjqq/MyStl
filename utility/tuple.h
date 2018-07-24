@@ -33,11 +33,11 @@ namespace MyStl {
     constexpr Head_base(Head_base &&) = default;
 
     constexpr Head_base(const Head &head)
-      : Head{head} {}
+      : Head(head) {}
 
     template <typename MHead>
     constexpr Head_base(MHead &&head)
-      : Head{std::forward<MHead>(head)} {}
+      : Head(std::forward<MHead>(head)) {}
     
     void swap(Head_base &) {}
   };
@@ -59,11 +59,11 @@ namespace MyStl {
     constexpr Head_base(Head_base &&) = default;
 
     constexpr Head_base(const Head &head)
-      : head_{head} {}
+      : head_(head) {}
 
     template <typename MHead>
     constexpr Head_base(MHead &&head)
-      : head_{std::forward<MHead>(head)} {}
+      : head_(std::forward<MHead>(head)) {}
 
     void swap(Head_base &h) {
       MyStl::swap(h.head_, head_);
@@ -105,21 +105,21 @@ namespace MyStl {
     constexpr tuple_impl(tuple_impl &&) = default;
 
     constexpr tuple_impl(const Head &head, const Tails &... tails)
-      : Inherited{tails ...}, Base{head} {}
+      : Inherited(tails ...), Base(head) {}
 
     template <typename MHead, typename ... MTails, typename = typename enable_if<sizeof...(Tails) == sizeof...(MTails)>::type>
     constexpr tuple_impl(MHead &&head, MTails &&... tails)
-      : Inherited{std::forward<MTails>(tails) ...}, Base{std::forward<MHead>(head)} {}
+      : Inherited(std::forward<MTails>(tails) ...), Base(std::forward<MHead>(head)) {}
 
     template <typename ... Elems, typename = typename enable_if<sizeof...(Tails) + 1 == sizeof...(Elems)>::type>
     constexpr tuple_impl(const tuple_impl<Idx, Elems ...> &t) // use copy
-      : Inherited{tuple_impl<Idx, Elems ...>::get_tails(t)}
-      , Base{tuple_impl<Idx, Elems ...>::get_head(t)} {}
+      : Inherited(tuple_impl<Idx, Elems ...>::get_tails(t))
+      , Base(tuple_impl<Idx, Elems ...>::get_head(t)) {}
 
     template <typename MHead, typename ... MTails, typename = typename enable_if<sizeof...(Tails) == sizeof...(MTails)>::type>
     constexpr tuple_impl(tuple_impl<Idx, MHead, MTails ...> &&t)
-      : Inherited{std::move(tuple_impl<Idx, MHead, MTails ...>::get_tails(t))}
-      , Base{std::forward<MHead>(tuple_impl<Idx, MHead, MTails ...>::get_head(t))} {}
+      : Inherited(std::move(tuple_impl<Idx, MHead, MTails ...>::get_tails(t)))
+      , Base(std::forward<MHead>(tuple_impl<Idx, MHead, MTails ...>::get_head(t))) {}
 
     tuple_impl &operator=(const tuple_impl &t) {
       get_head(*this) = get_head(t);
@@ -174,19 +174,19 @@ namespace MyStl {
     constexpr tuple_impl(tuple_impl &&) = default;
 
     constexpr tuple_impl(const Head &head)
-      : Base{head} {}
+      : Base(head) {}
 
     template <typename MHead>
     constexpr tuple_impl(MHead &&head)
-      : Base{std::forward<MHead>(head)} {}
+      : Base(std::forward<MHead>(head)) {}
 
     template <typename MHead>
     constexpr tuple_impl(const tuple_impl<Idx, MHead> &t)
-      : Base{tuple_impl<Idx, MHead>::get_head(t)} {}
+      : Base(tuple_impl<Idx, MHead>::get_head(t)) {}
 
     template <typename MHead>
     constexpr tuple_impl(tuple_impl<Idx, MHead> &&t)
-      : Base{std::forward<MHead>(tuple_impl<Idx, MHead>::get_head(t))} {}
+      : Base(std::forward<MHead>(tuple_impl<Idx, MHead>::get_head(t))) {}
 
     tuple_impl &operator=(const tuple_impl &t) {
       get_head(*this) = get_head(t);
@@ -225,15 +225,15 @@ namespace MyStl {
 
     template <typename ... Elems, typename = typename enable_if<sizeof...(TS) == sizeof...(Elems)>::type>
     constexpr tuple(Elems &&... elems)
-      : Inherited{std::forward<Elems>(elems) ...} {}
+      : Inherited(std::forward<Elems>(elems) ...) {}
 
     template <typename ... Elems, typename = typename enable_if<sizeof...(TS) == sizeof...(Elems)>::type>
     constexpr tuple(const tuple<Elems ...> &t)
-      : Inherited{static_cast<const tuple_impl<0, Elems ...> &>(t)} {}
+      : Inherited(static_cast<const tuple_impl<0, Elems ...> &>(t)) {}
 
     template <typename ... Elems, typename = typename enable_if<sizeof...(TS) == sizeof...(Elems)>::type>
     constexpr tuple(tuple<Elems ...> &&t)
-      : Inherited{static_cast<tuple_impl<0, Elems ...> &&>(t)} {}
+      : Inherited(static_cast<tuple_impl<0, Elems ...> &&>(t)) {}
 
     tuple &operator=(const tuple &t) {
       static_cast<Inherited &>(*this) = t;
@@ -282,23 +282,23 @@ namespace MyStl {
 
     template <typename MT1, typename MT2>
     constexpr tuple(MT1 &&t1, MT2 &&t2)
-      : Inherited{std::forward<MT1>(t1), std::forward<MT2>(t2)} {}
+      : Inherited(std::forward<MT1>(t1), std::forward<MT2>(t2)) {}
 
     template <typename MT1, typename MT2>
     constexpr tuple(const tuple<MT1, MT2> &t)
-      : Inherited{static_cast<const tuple_impl<0, MT1, MT2> &>(t)} {}
+      : Inherited(static_cast<const tuple_impl<0, MT1, MT2> &>(t)) {}
 
     template <typename MT1, typename MT2>
     constexpr tuple(tuple<MT1, MT2> &&t)
-      : Inherited{static_cast<tuple_impl<0, MT1, MT2> &&>(t)} {}
+      : Inherited(static_cast<tuple_impl<0, MT1, MT2> &&>(t)) {}
     
     template <typename MT1, typename MT2>
     constexpr tuple(const pair<MT1, MT2> &p)
-      : Inherited{p.first, p.second} {}
+      : Inherited(p.first, p.second) {}
     
     template <typename MT1, typename MT2>
     constexpr tuple(pair<MT1, MT2> &&p)
-      : Inherited{std::forward<MT1>(p.first), std::forward<MT2>(p.second)} {}
+      : Inherited(std::forward<MT1>(p.first), std::forward<MT2>(p.second)) {}
 
     tuple &operator=(const tuple &t) {
       static_cast<Inherited &>(*this) = t;
@@ -564,17 +564,17 @@ namespace MyStl {
   template <typename T1, typename T2>
   template <typename ... Args1, typename ... Args2>
   inline constexpr pair<T1, T2>::pair(piecewise_construct_t, tuple<Args1 ...> t1, tuple<Args2 ...> t2) 
-    : pair{t1, t2,
+    : pair(t1, t2,
            typename build_index_tuple_v2<sizeof...(Args1)>::type{},
-           typename build_index_tuple_v2<sizeof...(Args2)>::type{}} {}
+           typename build_index_tuple_v2<sizeof...(Args2)>::type{}) {}
 
   template <typename T1, typename T2>
   template <typename ... Args1, std::size_t ... Idx1,
             typename ... Args2, std::size_t ... Idx2>
   inline constexpr pair<T1, T2>::pair(tuple<Args1 ...> &t1, tuple<Args2 ...> &t2,
                                       index_tuple<Idx1 ...>, index_tuple<Idx2 ...>)
-    : first{std::forward<Args1>(get<Idx1>(t1)) ...}
-    , second{std::forward<Args2>(get<Idx2>(t2)) ...} {}
+    : first(std::forward<Args1>(get<Idx1>(t1)) ...)
+    , second(std::forward<Args2>(get<Idx2>(t2)) ...) {}
 }
 
 // support for structured binding

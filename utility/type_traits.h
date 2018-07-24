@@ -521,7 +521,7 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
 
    public:
     reference_wrapper(T &t)
-      : pt_{address_of(t)} {}
+      : pt_(address_of(t)) {}
 
     reference_wrapper(T &&) = delete;
     reference_wrapper(const reference_wrapper &) = default;
@@ -529,7 +529,6 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
     reference_wrapper &operator=(const reference_wrapper &r) = default;
 
     T &get() const noexcept {
-      std::cout << "111111" << std::endl;
       return *pt_;
     }
 

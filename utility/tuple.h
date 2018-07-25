@@ -561,6 +561,63 @@ namespace MyStl {
     return !(t1 < t2);
   }
 
+  template <typename ... TPS>
+  struct make_first_tuple_index_impl {
+    using type = index_tuple<>;
+  };
+
+  template <typename ... TS, typename ... TPS>
+  struct make_first_tuple_index_impl<tuple<TS ...>, TPS ...> {
+    using type = typename build_index_tuple_v2<sizeof...(TS)>::type;
+  };
+
+  template <typename ... TPS>
+  struct make_first_tuple_index
+    : make_first_tuple_index_impl<remove_cv_and_reference_t<TPS> ...> {};
+
+  template <typename ... TPS>
+  struct tuple_cat_type_impl {
+    using type = tuple<>;
+  };
+
+  template <typename TP, typename ... TPS>
+  struct tuple_cat_type_impl<TP, TPS ...> {
+    using type = typename tuple_cat_type_impl<TP, typename tuple_cat_type_impl<TPS ...>::type>::type;
+  };
+
+  template <typename ... TS1, typename ... TS2>
+  struct tuple_cat_type_impl<tuple<TS1 ...>, tuple<TS2 ...>> {
+    using type = tuple<TS1 ..., TS2 ...>;
+  };
+
+  template <typename ... TS>
+  struct tuple_cat_type_impl<tuple<TS ...>> {
+    using type = tuple<TS ...>;
+  };
+  
+  template <typename ... TPS>
+  struct tuple_cat_type
+    : tuple_cat_type_impl<remove_cv_and_reference_t<TPS> ...> {};
+
+  template <typename Res, std::size_t CurrIdx, std::size_t UpperBound, typename = enable_if_t<(CurrIdx == UpperBound)>, typename TP, typename ... TPS>
+  inline constexpr Res tuple_cat_helper(TP &&tp, TPS &&... tps) {
+    return Res{std::forward<TPS>(tps) ...};
+  }
+
+  template <typename Res, std::size_t CurrIdx, std::size_t UpperBound, typename = enable_if_t<(CurrIdx < UpperBound)>, std::size_t ... Idx, typename TP, typename ... TPS>
+  inline constexpr Res tuple_cat_helper(index_tuple<Idx ...>, TP &&tp, TPS &&... tps) {
+    using FirstIndex = typename make_first_tuple_index<TPS ...>::type;
+    return tuple_cat_helper<Res, CurrIdx + 1, UpperBound>(FirstIndex{}, std::forward<TPS>(tps) ..., get<Idx>(std::forward<TP>(tp)) ...);
+  }
+  
+  template <typename ... TPS>
+  inline constexpr typename tuple_cat_type<TPS ...>::type
+  tuple_cat(TPS &&... tps) {
+    using ResType = typename tuple_cat_type<TPS ...>::type;
+    using FirstIndex = typename make_first_tuple_index<TPS ...>::type;
+    return tuple_cat_helper<ResType, 0, sizeof...(TPS)>(FirstIndex{}, std::forward<TPS>(tps) ...);
+  }
+
   template <typename T1, typename T2>
   template <typename ... Args1, typename ... Args2>
   inline constexpr pair<T1, T2>::pair(piecewise_construct_t, tuple<Args1 ...> t1, tuple<Args2 ...> t2) 

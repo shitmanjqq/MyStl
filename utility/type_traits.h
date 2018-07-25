@@ -148,6 +148,14 @@ namespace MyStl {
   };
 
   template <typename T>
+  struct remove_cv_and_reference {
+    using type = typename remove_cv<typename remove_reference<T>::type>::type;
+  };
+
+  template <typename T>
+  using remove_cv_and_reference_t = typename remove_cv_and_reference<T>::type;
+
+  template <typename T>
   struct is_lvalue_reference : false_type {};
 
   template <typename T>

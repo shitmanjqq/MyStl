@@ -599,6 +599,15 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
     using type = U &;
   };
 
+  template <typename Class, typename ... TS>
+  struct if_copy_constructed : false_type {};
+
+  template <typename Class, typename T>
+  struct if_copy_constructed<Class, T>
+    : bool_constant<OR<is_same<Class, typename remove_reference<T>::type>,
+                       is_base_of<Class, typename remove_reference<T>::type>>::value>
+  {};
+
 }
 
 #endif

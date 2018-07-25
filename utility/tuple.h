@@ -35,7 +35,7 @@ namespace MyStl {
     constexpr Head_base(const Head &head)
       : Head(head) {}
 
-    template <typename MHead>
+    template <typename MHead, typename = enable_if_t<!if_copy_constructed<Head_base, MHead>::value>>
     constexpr Head_base(MHead &&head)
       : Head(std::forward<MHead>(head)) {}
     
@@ -61,7 +61,7 @@ namespace MyStl {
     constexpr Head_base(const Head &head)
       : head_(head) {}
 
-    template <typename MHead>
+    template <typename MHead, typename = enable_if_t<!if_copy_constructed<Head_base, MHead>::value>>
     constexpr Head_base(MHead &&head)
       : head_(std::forward<MHead>(head)) {}
 
@@ -107,7 +107,7 @@ namespace MyStl {
     constexpr tuple_impl(const Head &head, const Tails &... tails)
       : Inherited(tails ...), Base(head) {}
 
-    template <typename MHead, typename ... MTails, typename = typename enable_if<sizeof...(Tails) == sizeof...(MTails)>::type>
+    template <typename MHead, typename ... MTails, typename = enable_if_t<(sizeof...(Tails) == sizeof...(MTails)) && !if_copy_constructed<tuple_impl, MHead, MTails ...>::value>>
     constexpr tuple_impl(MHead &&head, MTails &&... tails)
       : Inherited(std::forward<MTails>(tails) ...), Base(std::forward<MHead>(head)) {}
 
@@ -176,7 +176,7 @@ namespace MyStl {
     constexpr tuple_impl(const Head &head)
       : Base(head) {}
 
-    template <typename MHead>
+    template <typename MHead, typename = enable_if_t<!if_copy_constructed<tuple_impl, MHead>::value>>
     constexpr tuple_impl(MHead &&head)
       : Base(std::forward<MHead>(head)) {}
 
@@ -223,7 +223,7 @@ namespace MyStl {
     constexpr tuple(const tuple &) = default;
     constexpr tuple(tuple &&) = default;
 
-    template <typename ... Elems, typename = typename enable_if<sizeof...(TS) == sizeof...(Elems)>::type>
+    template <typename ... Elems, typename = enable_if_t<(sizeof...(TS) == sizeof...(Elems)) && !if_copy_constructed<tuple, Elems ...>::value>>
     constexpr tuple(Elems &&... elems)
       : Inherited(std::forward<Elems>(elems) ...) {}
 

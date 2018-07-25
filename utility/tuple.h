@@ -1,6 +1,8 @@
 #ifndef UTILITY_TUPLE_H_
 #define UTILITY_TUPLE_H_
 
+#include <iostream>
+
 #include "type_traits.h"
 #include "pair.h"
 
@@ -571,6 +573,11 @@ namespace MyStl {
     using type = typename build_index_tuple_v2<sizeof...(TS)>::type;
   };
 
+  template <typename T1, typename T2, typename ... TPS>
+  struct make_first_tuple_index_impl<pair<T1, T2>, TPS ...> {
+    using type = index_tuple<0, 1>;
+  };
+
   template <typename ... TPS>
   struct make_first_tuple_index
     : make_first_tuple_index_impl<remove_cv_and_reference_t<TPS> ...> {};
@@ -590,9 +597,29 @@ namespace MyStl {
     using type = tuple<TS1 ..., TS2 ...>;
   };
 
+  template <typename T1, typename T2, typename T3, typename T4>
+  struct tuple_cat_type_impl<pair<T1, T2>, pair<T3, T4>> {
+    using type = tuple<T1, T2, T3, T4>;
+  };
+
+  template <typename T1, typename T2, typename ... TS>
+  struct tuple_cat_type_impl<pair<T1, T2>, tuple<TS ...>> {
+    using type = tuple<T1, T2, TS ...>;
+  };
+
+  template <typename T1, typename T2, typename ... TS>
+  struct tuple_cat_type_impl<tuple<TS ...>, pair<T1, T2>> {
+    using type = tuple<TS ..., T1, T2>;
+  };
+
   template <typename ... TS>
   struct tuple_cat_type_impl<tuple<TS ...>> {
     using type = tuple<TS ...>;
+  };
+
+  template <typename T1, typename T2>
+  struct tuple_cat_type_impl<pair<T1, T2>> {
+    using type = tuple<T1, T2>;
   };
   
   template <typename ... TPS>
@@ -618,6 +645,25 @@ namespace MyStl {
     return tuple_cat_helper<ResType, 0, sizeof...(TPS)>(FirstIndex{}, std::forward<TPS>(tps) ...);
   }
 
+  template <std::size_t Idx, std::size_t EndIdx, typename T, typename = enable_if_t<(Idx < EndIdx)>>
+  std::ostream &tuple_print_helper(std::ostream &os, const T &t) {
+    os << get<Idx>(t) << ", ";
+    return tuple_print_helper<Idx + 1, EndIdx>(os, t);
+  }
+
+  template <std::size_t Idx, std::size_t EndIdx, typename = enable_if_t<(Idx == EndIdx)>, typename T>
+  std::ostream &tuple_print_helper(std::ostream &os, const T &t) { // this form to overload the tuple_print_helper template function
+    return os << get<Idx>(t);
+  }
+
+  template <typename ... TS>
+  std::ostream &operator<<(std::ostream &os, const tuple<TS ...> &t) {
+    os << '[';
+    tuple_print_helper<0, sizeof...(TS) - 1>(os, t);
+    return os << ']';
+  }
+
+  // pair construction support for piecewise construct
   template <typename T1, typename T2>
   template <typename ... Args1, typename ... Args2>
   inline constexpr pair<T1, T2>::pair(piecewise_construct_t, tuple<Args1 ...> t1, tuple<Args2 ...> t2) 

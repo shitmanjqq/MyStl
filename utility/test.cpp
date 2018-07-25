@@ -59,10 +59,29 @@ struct B : A {};
 int main()
 {
     std::cout << std::boolalpha;
-    std::string s = "hello world";
-    auto f1 = MyStl::make_tuple(s);
-    auto f2 = MyStl::make_tuple(2.3);
-    auto f3 = MyStl::make_tuple(f1, f2);
+    // std::string s = "hello world";
+    // auto f1 = MyStl::make_tuple(s);
+    // auto f2 = MyStl::make_tuple(2.3, s);
+    // auto f3 = MyStl::make_tuple(f1, f2);
+    // auto f4 = MyStl::tuple_cat(f2, f3, f1);
+    // std::cout << MyStl::get<0>(MyStl::get<2>(f4)) << std::endl;
+    // std::cout << MyStl::get<0>(MyStl::get<3>(f4)) << std::endl;
+    // std::cout << MyStl::get<1>(MyStl::get<3>(f4)) << std::endl;
+    // std::cout << MyStl::get<0>(f4) << std::endl;
+    // std::cout << MyStl::get<1>(f4) << std::endl;
+    // std::cout << MyStl::get<4>(f4) << std::endl;
+    // auto p1 = MyStl::make_pair(1, s);
+    // auto f5 = MyStl::tuple_cat(f1, p1);
+    // std::cout << MyStl::get<0>(f5) << std::endl;
+    // std::cout << MyStl::get<1>(f5) << std::endl;
+    // std::cout << MyStl::get<2>(f5) << std::endl;
+    // std::cout << std::tuple_size<decltype(f5)>::value << std::endl;
+
+    int n;
+    auto tt = MyStl::tuple_cat (MyStl::make_tuple(42,7.7,"hello"), MyStl::tie(n));
+    MyStl::get<3>(tt) = 23;
+    // std::cout << n << std::endl;
+    std::cout << tt << std::endl;
     // std::cout << MyStl::get<0>(MyStl::get<0>(f3)) << std::endl;
     // std::cout << MyStl::get<1>(MyStl::get<0>(f3)) << std::endl;
     // std::cout << MyStl::get<0>(MyStl::get<1>(f3)) << std::endl;

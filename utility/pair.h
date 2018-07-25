@@ -47,6 +47,16 @@ namespace MyStl {
     constexpr pair(pair<MT1, MT2> &&p)
       : first(std::move<MT1>(p.first)), second(std::move<MT2>(p.second)) {}
 
+    template <typename MT1, typename MT2,
+              typename = enable_if_t<AND<std::is_convertible<const MT1 &, T1>,
+                                         std::is_convertible<const MT2 &, T2>>::value>>
+    constexpr pair(const tuple<MT1, MT2> &t);
+
+    template <typename MT1, typename MT2,
+              typename = enable_if_t<AND<std::is_convertible<MT1 &&, T1>,
+                                         std::is_convertible<MT2 &&, T2>>::value>>
+    constexpr pair(tuple<MT1, MT2> &&t);
+
     template <typename ... Args1, typename ... Args2>
     constexpr pair(piecewise_construct_t, tuple<Args1 ...>, tuple<Args2 ...>);
 
@@ -226,7 +236,7 @@ namespace MyStl {
 
   template <typename T1, typename T2>
   std::ostream &operator<<(std::ostream &os, const pair<T1, T2> &p) {
-    return os << p.first << ", " << p.second;
+    return os << '[' << p.first << ", " << p.second << ']';
   }
 
 }

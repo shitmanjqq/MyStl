@@ -59,74 +59,17 @@ struct B : A {};
 int main()
 {
     std::cout << std::boolalpha;
-    // std::string s = "hello world";
-    // auto f1 = MyStl::make_tuple(s);
-    // auto f2 = MyStl::make_tuple(2.3, s);
-    // auto f3 = MyStl::make_tuple(f1, f2);
-    // auto f4 = MyStl::tuple_cat(f2, f3, f1);
-    // std::cout << MyStl::get<0>(MyStl::get<2>(f4)) << std::endl;
-    // std::cout << MyStl::get<0>(MyStl::get<3>(f4)) << std::endl;
-    // std::cout << MyStl::get<1>(MyStl::get<3>(f4)) << std::endl;
-    // std::cout << MyStl::get<0>(f4) << std::endl;
-    // std::cout << MyStl::get<1>(f4) << std::endl;
-    // std::cout << MyStl::get<4>(f4) << std::endl;
-    // auto p1 = MyStl::make_pair(1, s);
-    // auto f5 = MyStl::tuple_cat(f1, p1);
-    // std::cout << MyStl::get<0>(f5) << std::endl;
-    // std::cout << MyStl::get<1>(f5) << std::endl;
-    // std::cout << MyStl::get<2>(f5) << std::endl;
-    // std::cout << std::tuple_size<decltype(f5)>::value << std::endl;
 
-    int n;
-    auto tt = MyStl::tuple_cat (MyStl::make_tuple(42,7.7,"hello"), MyStl::tie(n));
-    MyStl::get<3>(tt) = 23;
-    // std::cout << n << std::endl;
-    std::cout << tt << std::endl;
-    // std::cout << MyStl::get<0>(MyStl::get<0>(f3)) << std::endl;
-    // std::cout << MyStl::get<1>(MyStl::get<0>(f3)) << std::endl;
-    // std::cout << MyStl::get<0>(MyStl::get<1>(f3)) << std::endl;
-    // MyStl::tell_type<decltype(MyStl::make_tuple(f2))> a;
+    std::string s = "hello world";
+    auto t1 = MyStl::make_tuple(1, s);
+    MyStl::pair<int, std::string> p1 = std::move(t1);
+    std::cout << t1 << std::endl;
+    std::cout << p1 << std::endl;
 
-    // std::cout << MyStl::get<0>(f1) << std::endl;
-    // auto f4 = std::move(f1);
-    // std::cout << MyStl::get<0>(f1) << std::endl;
-    // std::cout << MyStl::get<0>(f4) << std::endl;
-
-    // std::cout << MyStl::is_base_of<A, const A>::value << std::endl;
-    // auto f1 = std::make_tuple(s, 23);
-    // auto f2 = std::make_tuple(2.3);
-    // auto f3 = std::make_tuple(f2);
-
-    // MyStl::tuple<int> t1{3};
-    // std::tuple<std::tuple<int>> t2{t1};
-
-    // auto t3 = t1;
-    // std::cout << MyStl::get<0>(t3) << std::endl;
-
-    // std::cout << MyStl::if_copy_constructed<A, const A &, int>::value << std::endl;
-
-    // MyStl::tell_type<decltype(f3)> a;
-    // std::cout << MyStl::get<1>(f1) << std::endl;
-    // auto f3 = MyStl::tuple_cat(std::move(f1), f2);
-    // std::cout << MyStl::get<1>(f1) << std::endl;
-
-    // std::cout << MyStl::get<1>(f3) << std::endl;
-    // auto f4 = MyStl::tuple_cat(f1, f2, std::move(f3));
-    // std::cout << MyStl::get<1>(f3) << std::endl;
-    // std::cout << 
-    // MyStl::tell_type<MyStl::remove_cv_and_reference_t<const volatile int &&>> a;
-
-    // TT::i = 3;
-    // int i;
-    // const int j = i;
-    // MyStl::tell_type<tuple_cat_type<std::tuple<A>, std::tuple<int, double>, std::tuple<A, A, A>, std::tuple<int, float, double>, std::tuple<A, float, double>>::type> a;
-    // auto f4 = ::tuple_cat(f1, f2, f3);
-    // std::cout << std::tuple_size<decltype(f4)>::value << std::endl;
-
-    // MyStl::tell_type<MyStl::tuple_cat_type<MyStl::tuple<int &, std::string>, MyStl::tuple<double, char, A>, MyStl::tuple<std::string, MyStl::tuple<int>>>::type> a;
-    // const int i = 3;
-    // MyStl::tell_compile_const<i> a;
-    // MyStl::tell_type<std::_Build_index_tuple<10>::__type> a;
+    auto pp = std::make_pair(23, s);
+    std::cout << pp << std::endl;
+    auto st = std::make_tuple(23, s);
+    std::cout << st << std::endl;
 }
 
 

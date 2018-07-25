@@ -2,6 +2,7 @@
 #define UTILITY_TYPE_TRAITS_H_
 
 #include <type_traits>
+#include <iostream>
 
 namespace MyStl {
 
@@ -607,6 +608,38 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
     : bool_constant<OR<is_same<Class, typename remove_reference<T>::type>,
                        is_base_of<Class, typename remove_reference<T>::type>>::value>
   {};
+
+}
+
+namespace std {
+
+#if __cplusplus <= 201103L
+  template <bool V>
+  using enable_if_t = typename enable_if<V>::type;
+#endif
+
+  template <typename T1, typename T2>
+  ostream &operator<<(ostream &os, const pair<T1, T2> &p) {
+    return os << '[' << p.first << ", " << p.second << ']';
+  }
+
+  template <size_t Idx, size_t EndIdx, typename ... TS, typename = enable_if_t<(Idx < EndIdx)>>
+  ostream &tuple_print_helper(ostream &os, const tuple<TS ...> &t) {
+    os << get<Idx>(t) << ", ";
+    return tuple_print_helper<Idx + 1, EndIdx>(os, t);
+  }
+
+  template <size_t Idx, size_t EndIdx, typename = enable_if_t<(Idx == EndIdx)>, typename ... TS>
+  ostream &tuple_print_helper(ostream &os, const tuple<TS ...> &t) { // this form to overload the tuple_print_helper template function
+    return os << get<Idx>(t);
+  }
+
+  template <typename ... TS>
+  ostream &operator<<(ostream &os, const tuple<TS ...> &t) {
+    os << '[';
+    tuple_print_helper<0, sizeof...(TS) - 1>(os, t);
+    return os << ']';
+  }
 
 }
 

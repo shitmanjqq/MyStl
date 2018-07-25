@@ -1,8 +1,6 @@
 #ifndef UTILITY_TUPLE_H_
 #define UTILITY_TUPLE_H_
 
-#include <iostream>
-
 #include "type_traits.h"
 #include "pair.h"
 
@@ -678,6 +676,18 @@ namespace MyStl {
                                       index_tuple<Idx1 ...>, index_tuple<Idx2 ...>)
     : first(std::forward<Args1>(get<Idx1>(t1)) ...)
     , second(std::forward<Args2>(get<Idx2>(t2)) ...) {}
+
+  template <typename T1, typename T2>
+  template <typename MT1, typename MT2, typename>
+  constexpr pair<T1, T2>::pair(const tuple<MT1, MT2> &t)
+    : first(get<0>(t)), second(get<1>(t))
+  {}
+
+  template <typename T1, typename T2>
+  template <typename MT1, typename MT2, typename>
+  constexpr pair<T1, T2>::pair(tuple<MT1, MT2> &&t)
+    : first(get<0>(std::move(t))), second(get<1>(std::move(t)))
+  {}
 }
 
 // support for structured binding

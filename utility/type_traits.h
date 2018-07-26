@@ -84,6 +84,9 @@ namespace MyStl {
   template <>
   struct OR<> : false_type {};
 
+  template <typename T>
+  struct NOT : bool_constant<!T::value> {};
+
   template <bool, typename = void>
   struct enable_if {};
 
@@ -94,6 +97,9 @@ namespace MyStl {
 
   template <bool V>
   using enable_if_t = typename enable_if<V>::type;
+
+  template <typename T>
+  using void_t = void;
 
   template <typename ... Conds>
   using Require = typename enable_if<AND<Conds ...>::value>::type;
@@ -170,7 +176,7 @@ namespace MyStl {
 
   template <typename T>
   struct is_reference : OR<is_lvalue_reference<T>,
-                           is_rvalue_reference<T>>::type {};
+                           is_rvalue_reference<T>> {};
 
   template <typename T>
   struct is_void_helper : false_type {};
@@ -180,6 +186,12 @@ namespace MyStl {
 
   template <typename T>
   struct is_void : is_void_helper<typename remove_cv<T>::type> {};
+
+  template <typename T>
+  struct is_pointer : false_type {};
+
+  template <typename T>
+  struct is_pointer<T *> : true_type {};
 
   template <typename T>
   struct is_function : false_type {};
@@ -249,6 +261,22 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
   template <typename From, typename To>
   struct is_convertible : is_convertible_helper<From, To>::type {};
 
+  template <typename Dst, typename Src>
+  struct is_assignable_helper {
+   private:
+    template <typename MDst, typename MSrc, typename = decltype(std::declval<MDst>() = std::declval<MSrc>())>
+    true_type test(int);
+
+    template <typename, typename>
+    false_type test(...);
+
+   public:
+    using type = decltype(test<Dst, Src>(0));
+  };
+
+  template <typename Dst, typename Src>
+  struct is_assignable : is_assignable_helper<Dst, Src> {};
+
   template <typename T>
   struct is_empty : bool_constant<__is_empty(T)> {};
 
@@ -283,7 +311,7 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
   struct remove_all_extents<T[N]> : remove_all_extents<T> {};
 
   struct is_default_constructible_helper {
-    template <typename T, typename = decltype(T{})>
+    template <typename T, typename = decltype(T())>
     static true_type test(int);
 
     template <typename>

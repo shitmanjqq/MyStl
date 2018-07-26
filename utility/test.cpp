@@ -14,9 +14,11 @@
 #include <tuple>
 #include <functional>
 #include <vector>
+#include <memory>
 // using namespace std;
 #include "pair.h"
 #include "tuple.h"
+#include "smart_pointer.h"
 
 int gi = 3;
 
@@ -39,6 +41,7 @@ class Foo
     Foo &operator=(Foo &&f) {
         MyStl::swap(i_, f.i_);
         std::cout << "move =" << std::endl;
+        return *this;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Foo &f) {
@@ -53,23 +56,58 @@ class Foo
     int i_;
 };
 
-struct A {};
-struct B : A {};
+struct A {
+    virtual ~A() {}
+};
+
+struct B : A {
+    ~B() {
+        // std::cout << "~B" << std::endl;
+    }
+};
+
+template <typename T>
+struct Test {
+    // using type = T *;
+    // void func(T *);
+};
+
+struct AA {
+    using pointer = AA *;
+    ~AA() {
+        std::cout << "~AA" << std::endl;
+    }
+};
+
+struct BB {
+  private:
+    BB();
+};
+
+struct C {
+    AA &&ra;
+};
 
 int main()
 {
+    // std::default_delete<A> da;
+    std::default_delete<const B> db;
     std::cout << std::boolalpha;
 
-    std::string s = "hello world";
-    auto t1 = MyStl::make_tuple(1, s);
-    MyStl::pair<int, std::string> p1 = std::move(t1);
-    std::cout << t1 << std::endl;
-    std::cout << p1 << std::endl;
+    std::cout << std::is_convertible<B &, A &>::value << std::endl;
 
-    auto pp = std::make_pair(23, s);
-    std::cout << pp << std::endl;
-    auto st = std::make_tuple(23, s);
-    std::cout << st << std::endl;
+    // MyStl::unique_ptr_impl<AA, BB> a;
+    // std::cout << MyStl::is_default_constructible<BB>::value << std::endl;
+
+    // C c{AA()};
+    // std::cout << "end of main" << std::endl;
+
+    MyStl::unique_ptr<AA> pa{new AA};
+
+    std::cout << MyStl::is_reference<int &>::value << std::endl;
+    // auto pa1 = pa;
+    // MyStl::tell_type<decltype(BB{})> b;
+    // MyStl::tell_type<decltype(BB())> b;
 }
 
 

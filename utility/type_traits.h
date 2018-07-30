@@ -188,10 +188,43 @@ namespace MyStl {
   struct is_void : is_void_helper<typename remove_cv<T>::type> {};
 
   template <typename T>
-  struct is_pointer : false_type {};
+  struct is_pointer_helper : false_type {};
 
   template <typename T>
-  struct is_pointer<T *> : true_type {};
+  struct is_pointer_helper<T *> : true_type {};
+
+  template <typename T>
+  struct is_pointer : is_pointer_helper<typename remove_cv<T>::type> {};
+
+  template <typename T>
+  struct remove_pointer_helper {
+    using type = T;
+  };
+
+  template <typename T>
+  struct remove_pointer_helper<T *> {
+    using type = T;
+  };
+
+  template <typename T>
+  struct remove_pointer {
+    using type = typename remove_pointer_helper<typename remove_cv<T>::type>::type;
+  };
+
+  template <typename From, typename To>
+  struct is_convertible;
+
+  template <typename PT1, typename PT2, bool = OR<is_same<PT1, PT2>,
+                                                  is_convertible<typename remove_pointer<PT2>::type (*)[], typename remove_pointer<PT1>::type (*)[]>>::value>
+  struct is_more_or_equale_cv_pointer_helper : false_type {};
+
+  template <typename PT1, typename PT2>
+  struct is_more_or_equale_cv_pointer_helper<PT1 *, PT2 *, true> : true_type {};
+
+  template <typename PT1, typename PT2>
+  struct is_more_or_equale_cv_pointer
+    : is_more_or_equale_cv_pointer_helper<typename remove_cv<PT1>::type, typename remove_cv<PT2>::type>
+  {};
 
   template <typename T>
   struct is_function : false_type {};
@@ -246,7 +279,7 @@ struct is_function<Res(Args ......) cv_append ref_append> : true_type {}
   template <typename From, typename To>
   struct is_convertible_helper<From, To, false> {
    private:
-    static void helper(To &);
+    static void helper(To); // can't use To& for argument type, because std::declval() is normally a rvalue
 
     template <typename MFrom, typename = decltype(helper(std::declval<MFrom>()))>
     static true_type test(int);

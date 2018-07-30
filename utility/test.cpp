@@ -56,58 +56,54 @@ class Foo
     int i_;
 };
 
-struct A {
-    virtual ~A() {}
-};
+struct D {
+    using pointer = const Foo *;
 
-struct B : A {
-    ~B() {
-        // std::cout << "~B" << std::endl;
+    void operator()(pointer p) {
+        delete[] p;
     }
 };
 
-template <typename T>
-struct Test {
-    // using type = T *;
-    // void func(T *);
-};
+std::unique_ptr<int> func() {
+    std::unique_ptr<int> pi{new int};
 
-struct AA {
-    using pointer = AA *;
-    ~AA() {
-        std::cout << "~AA" << std::endl;
-    }
-};
-
-struct BB {
-  private:
-    BB();
-};
-
-struct C {
-    AA &&ra;
-};
+    return pi;
+}
 
 int main()
 {
     // std::default_delete<A> da;
-    std::default_delete<const B> db;
+    // std::default_delete<const B> db;
     std::cout << std::boolalpha;
 
-    std::cout << std::is_convertible<B &, A &>::value << std::endl;
+    // std::cout << MyStl::is_more_cv_pointer<A *, B *>::value << std::endl;
+    // std::cout << MyStl::is_convertible<B, A>::value << std::endl;
+    // std::cout << MyStl::is_convertible<MyStl::remove_pointer<int *>::type, MyStl::remove_pointer<const int *>::type>::value << std::endl;
+    // std::cout << MyStl::is_pointer<int *const>::value << std::endl;
 
-    // MyStl::unique_ptr_impl<AA, BB> a;
-    // std::cout << MyStl::is_default_constructible<BB>::value << std::endl;
+    // MyStl::tell_type<MyStl::remove_pointer<int *>::type> a;
+    // std::cout << std::is_convertible<B &, A &>::value << std::endl;
 
-    // C c{AA()};
-    // std::cout << "end of main" << std::endl;
+    // MyStl::unique_ptr<Foo [], D> up{new Foo[10]};
+// // std::unique_ptr<int> up = new int; // ERROR
+// std::unique_ptr<int> up(new int); // OK
+    // up.release();
+    // MyStl::unique_ptr<Foo> pf(new Foo);
+    // MyStl::unique_ptr<Foo> pf1(new Foo);
+    // pf = std::move(pf1);
+    // pf = new Foo;
+    // pf = nullptr;
+    // pf.reset();
+    // std::unique_ptr<Foo> sf(new Foo);
+    // sf = nullptr;
+    // up.reset(new const Foo[3]);
+    // auto r = func();
 
-    MyStl::unique_ptr<AA> pa{new AA};
-
-    std::cout << MyStl::is_reference<int &>::value << std::endl;
-    // auto pa1 = pa;
-    // MyStl::tell_type<decltype(BB{})> b;
-    // MyStl::tell_type<decltype(BB())> b;
+    for (int i = 0; i < 10; ++i) {
+        Foo f;
+    }
+    
+    std::cout << "end of main" << std::endl;
 }
 
 
